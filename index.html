@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lista de Compras - Vue 3 + Tailwind</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 via CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div id="app" class="w-full max-w-md bg-white rounded-2xl shadow p-6">
+      <h1 class="text-2xl font-bold mb-4 text-center">Lista de Compras</h1>
+      <div class="flex mb-4">
+        <input
+          v-model="newItem"
+          @keyup.enter="addItem"
+          type="text"
+          placeholder="Adicionar item..."
+          class="flex-1 border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <button
+          @click="addItem"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-r-lg hover:bg-indigo-700 transition"
+        >
+          ➕
+        </button>
+      </div>
+      <ul>
+        <li
+          v-for="(item, index) in produtos"
+          :key="item.id"
+          class="flex items-center justify-between mb-2 p-2 rounded-lg"
+          :class="{'bg-green-100': item.comprado, 'bg-gray-50': !item.comprado}"
+        >
+          <div class="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              v-model="item.comprado"
+              @change="saveLista"
+              class="h-5 w-5 text-indigo-600"
+            />
+            <div
+              v-if="editIndex !== index"
+              @dblclick="startEdit(index)"
+              class="cursor-pointer"
+              :class="{'line-through text-gray-500': item.comprado}"
+            >
+              {{ item.nome }}
+            </div>
+            <input
+              v-else
+              v-model="editText"
+              @keyup.enter="confirmEdit(index)"
+              @blur="confirmEdit(index)"
+              class="border-b border-indigo-300 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <div class="flex items-center space-x-2">
+            <button
+              v-if="editIndex !== index"
+              @click="startEdit(index)"
+              class="text-sm text-indigo-600 hover:underline"
+            >
+              Editar
+            </button>
+            <button
+              v-else
+              @click="confirmEdit(index)"
+              class="text-sm text-indigo-600 hover:underline"
+            >
+              Salvar
+            </button>
+            <!-- Botão Excluir -->
+            <button
+              @click="removeItem(index)"
+              class="text-sm text-red-600 hover:underline"
+            >
+              Excluir
+            </button>
+          </div>
+        </li>
+      </ul>
+      <div class="mt-4 text-right text-gray-600">
+        Itens comprados: {{ contador }} / {{ produtos.length }}
+      </div>
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+
+      createApp({
+        data() {
+          return {
+            newItem: "",
+            produtos: [],
+            editIndex: null,
+            editText: "",
+          };
+        },
+        computed: {
+          contador() {
+            return this.produtos.filter((i) => i.comprado).length;
+          },
+        },
+        methods: {
+          loadLista() {
+            const data = localStorage.getItem("listaCompras");
+            this.produtos = data ? JSON.parse(data) : [];
+          },
+          saveLista() {
+            localStorage.setItem("listaCompras", JSON.stringify(this.produtos));
+          },
+          addItem() {
+            const nome = this.newItem.trim();
+            if (!nome) return;
+            this.produtos.push({
+              id: Date.now().toString(),
+              nome,
+              comprado: false,
+            });
+            this.newItem = "";
+            this.saveLista();
+          },
+          startEdit(index) {
+            this.editIndex = index;
+            this.editText = this.produtos[index].nome;
+          },
+          confirmEdit(index) {
+            if (this.editText.trim()) {
+              this.produtos[index].nome = this.editText.trim();
+              this.saveLista();
+            }
+            this.editIndex = null;
+            this.editText = "";
+          },
+          removeItem(index) {
+            this.produtos.splice(index, 1);
+            this.saveLista();
+            if (this.editIndex === index) {
+              this.editIndex = null;
+              this.editText = "";
+            }
+          },
+        },
+        mounted() {
+          this.loadLista();
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
