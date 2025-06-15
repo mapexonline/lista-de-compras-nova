@@ -3,11 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lista de Compras - Vue 3 + Tailwind</title>
+    <title>Lista de Compras - Vue 3 + Tailwind + Firebase</title>
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Vue 3 via CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Firebase compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   </head>
   <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
     <div id="app" class="w-full max-w-md bg-white rounded-2xl shadow p-6">
@@ -87,6 +90,22 @@
       </div>
     </div>
 
+    <!-- Firebase initialization -->
+    <script>
+      // Configuração do Firebase (compat)
+      const firebaseConfig = {
+        apiKey: "AIzaSyDSJD_rqfi4fuH2I0IdAeoReKBKEoKMmXE",
+        authDomain: "lista-de-compras-app-9ea94.firebaseapp.com",
+        projectId: "lista-de-compras-app-9ea94",
+        storageBucket: "lista-de-compras-app-9ea94.appspot.com",
+        messagingSenderId: "126606920665",
+        appId: "1:126606920665:web:8d92682a223163afd5e7c8",
+      };
+      // Inicializa Firebase
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+    </script>
+
     <script>
       const { createApp } = Vue;
 
@@ -105,12 +124,15 @@
           },
         },
         methods: {
-          loadLista() {
-            const data = localStorage.getItem("listaCompras");
-            this.produtos = data ? JSON.parse(data) : [];
+          async loadLista() {
+            const doc = await db.collection("listas").doc("minhaLista").get();
+            this.produtos = doc.exists ? doc.data().itens : [];
           },
-          saveLista() {
-            localStorage.setItem("listaCompras", JSON.stringify(this.produtos));
+          async saveLista() {
+            await db
+              .collection("listas")
+              .doc("minhaLista")
+              .set({ itens: this.produtos });
           },
           addItem() {
             const nome = this.newItem.trim();
