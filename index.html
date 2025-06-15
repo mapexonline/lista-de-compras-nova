@@ -75,7 +75,6 @@
             >
               Salvar
             </button>
-            <!-- Botão Excluir -->
             <button
               @click="removeItem(index)"
               class="text-sm text-red-600 hover:underline"
@@ -92,7 +91,6 @@
 
     <!-- Firebase initialization -->
     <script>
-      // Configuração do Firebase (compat)
       const firebaseConfig = {
         apiKey: "AIzaSyDSJD_rqfi4fuH2I0IdAeoReKBKEoKMmXE",
         authDomain: "lista-de-compras-app-9ea94.firebaseapp.com",
@@ -101,16 +99,12 @@
         messagingSenderId: "126606920665",
         appId: "1:126606920665:web:8d92682a223163afd5e7c8",
       };
-      // Inicializa Firebase
-      try {
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        console.log("🔥 Firebase inicializado com sucesso!");
-      } catch (e) {
-        console.error("❌ Falha ao inicializar o Firebase:", e);
-      }
+
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
     </script>
 
+    <!-- Vue App -->
     <script>
       const { createApp } = Vue;
 
@@ -129,13 +123,19 @@
           },
         },
         methods: {
-          async loadLista() {
-            try {
-              const doc = await db.collection("listas").doc("minhaLista").get();
-              this.produtos = doc.exists ? doc.data().itens : [];
-            } catch (error) {
-              console.error("Erro ao carregar a lista:", error);
-            }
+          loadLista() {
+            db.collection("listas")
+              .doc("minhaLista")
+              .onSnapshot(
+                (doc) => {
+                  if (doc.exists) {
+                    this.produtos = doc.data().itens;
+                  }
+                },
+                (error) => {
+                  console.error("Erro ao escutar atualizações:", error);
+                }
+              );
           },
           async saveLista() {
             try {
