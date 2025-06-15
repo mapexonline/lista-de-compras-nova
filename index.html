@@ -102,8 +102,13 @@
         appId: "1:126606920665:web:8d92682a223163afd5e7c8",
       };
       // Inicializa Firebase
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
+      try {
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        console.log("🔥 Firebase inicializado com sucesso!");
+      } catch (e) {
+        console.error("❌ Falha ao inicializar o Firebase:", e);
+      }
     </script>
 
     <script>
@@ -125,14 +130,22 @@
         },
         methods: {
           async loadLista() {
-            const doc = await db.collection("listas").doc("minhaLista").get();
-            this.produtos = doc.exists ? doc.data().itens : [];
+            try {
+              const doc = await db.collection("listas").doc("minhaLista").get();
+              this.produtos = doc.exists ? doc.data().itens : [];
+            } catch (error) {
+              console.error("Erro ao carregar a lista:", error);
+            }
           },
           async saveLista() {
-            await db
-              .collection("listas")
-              .doc("minhaLista")
-              .set({ itens: this.produtos });
+            try {
+              await db
+                .collection("listas")
+                .doc("minhaLista")
+                .set({ itens: this.produtos });
+            } catch (error) {
+              console.error("Erro ao salvar a lista:", error);
+            }
           },
           addItem() {
             const nome = this.newItem.trim();
