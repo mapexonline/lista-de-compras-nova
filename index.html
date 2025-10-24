@@ -3,53 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lista de Compras - Firebase</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <title>Lista de Compras Simples</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #f0f0f0;
+        padding: 20px;
+      }
+      #lista {
+        margin-top: 20px;
+      }
+      .item {
+        background: #fff;
+        padding: 10px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .item.comprado {
+        text-decoration: line-through;
+        background: #c8f7c5;
+      }
+      button {
+        margin-left: 10px;
+      }
+    </style>
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   </head>
-  <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-    <div id="app" class="w-full max-w-md bg-white rounded-xl shadow p-6">
-      <h1 class="text-2xl font-bold mb-4 text-center">Lista de Compras</h1>
-      <div class="flex mb-4">
-        <input
-          v-model="newItem"
-          @keyup.enter="addItem"
-          type="text"
-          placeholder="Adicionar item..."
-          class="flex-1 border rounded-l-lg px-4 py-2"
-        />
-        <button
-          @click="addItem"
-          class="bg-indigo-600 text-white px-4 py-2 rounded-r-lg hover:bg-indigo-700 transition"
-        >
-          ➕
-        </button>
-      </div>
-      <ul>
-        <li
-          v-for="(item, index) in produtos"
-          :key="item.id"
-          class="flex items-center justify-between mb-2 p-2 rounded-lg cursor-pointer"
-          :class="{'bg-green-200': item.comprado, 'bg-gray-100': !item.comprado}"
-          @click="toggleItem(item)"
-        >
-          <span :class="{ 'line-through': item.comprado }"
-            >{{ item.nome }}</span
-          >
-          <button
-            @click.stop="deleteItem(item)"
-            class="text-red-500 hover:text-red-700"
-          >
-            ❌
-          </button>
-        </li>
-      </ul>
-    </div>
+  <body>
+    <h1>🛒 Lista de Compras</h1>
+    <input id="itemInput" type="text" placeholder="Digite o item..." />
+    <button onclick="adicionarItem()">Adicionar</button>
+
+    <div id="lista"></div>
 
     <script>
-      // Firebase config - substitua com a sua se necessário
+      // Config Firebase
       const firebaseConfig = {
         apiKey: "AIzaSyDSJD_rqfi4fuH2I0IdAeoReKBKEoKMmXE",
         authDomain: "lista-de-compras-app-9ea94.firebaseapp.com",
@@ -59,56 +51,54 @@
         appId: "1:126606920665:web:8d92682a223163afd5e7c8",
       };
 
-      // Inicialização Firebase
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
 
-      // Vue App
-      const { createApp } = Vue;
+      const listaEl = document.getElementById("lista");
+      const inputEl = document.getElementById("itemInput");
 
-      createApp({
-        data() {
-          return {
-            newItem: "",
-            produtos: [],
-          };
-        },
-        methods: {
-          addItem() {
-            const nome = this.newItem.trim();
-            if (nome === "") return;
+      function adicionarItem() {
+        const nome = inputEl.value.trim();
+        if (!nome) return;
 
-            db.collection("produtos").add({
-              nome,
-              comprado: false,
-              criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            });
+        db.collection("produtos")
+          .add({
+            nome,
+            comprado: false,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+          })
+          .then(() => {
+            inputEl.value = "";
+          });
+      }
 
-            this.newItem = "";
-          },
-          toggleItem(item) {
-            db.collection("produtos").doc(item.id).update({
-              comprado: !item.comprado,
-            });
-          },
-          deleteItem(item) {
-            db.collection("produtos").doc(item.id).delete();
-          },
-          carregarProdutos() {
-            db.collection("produtos")
-              .orderBy("criadoEm", "desc")
-              .onSnapshot((snapshot) => {
-                this.produtos = snapshot.docs.map((doc) => ({
-                  id: doc.id,
-                  ...doc.data(),
-                }));
-              });
-          },
-        },
-        mounted() {
-          this.carregarProdutos();
-        },
-      }).mount("#app");
+      function renderItem(doc) {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "item" + (data.comprado ? " comprado" : "");
+        div.innerHTML = `
+        <span onclick="toggleItem('${doc.id}', ${data.comprado})">${data.nome}</span>
+        <button onclick="removerItem('${doc.id}')">❌</button>
+      `;
+        listaEl.appendChild(div);
+      }
+
+      function toggleItem(id, statusAtual) {
+        db.collection("produtos").doc(id).update({
+          comprado: !statusAtual,
+        });
+      }
+
+      function removerItem(id) {
+        db.collection("produtos").doc(id).delete();
+      }
+
+      db.collection("produtos")
+        .orderBy("criadoEm", "desc")
+        .onSnapshot((snapshot) => {
+          listaEl.innerHTML = "";
+          snapshot.forEach((doc) => renderItem(doc));
+        });
     </script>
   </body>
 </html>
